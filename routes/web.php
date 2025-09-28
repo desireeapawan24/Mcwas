@@ -1,0 +1,106 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AccountantController;
+use App\Http\Controllers\PlumberController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\Auth\AdminRegisteredUserController;
+use App\Models\SetupRequest;
+use Illuminate\Support\Facades\Route;
+
+
+// Redirect root URL to login
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+// Removed admin registration routes per request
+
+// Admin self-registration (email + password only)
+Route::middleware('guest')->group(function () {
+    Route::get('/admin/register', [AdminRegisteredUserController::class, 'create'])
+        ->name('admin.register');
+    Route::post('/admin/register', [AdminRegisteredUserController::class, 'store'])
+        ->name('admin.register.store');
+});
+
+Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    if ($user->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    } elseif ($user->isAccountant()) {
+        return redirect()->route('accountant.dashboard');
+    } elseif ($user->isPlumber()) {
+        return redirect()->route('plumber.dashboard');
+    } elseif ($user->isCustomer()) {
+        return redirect()->route('customer.dashboard');
+    }
+    
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Admin routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/pending-accounts', [AdminController::class, 'pendingAccounts'])->name('pending-accounts');
+    Route::post('/approve-account/{id}', [AdminController::class, 'approveAccount'])->name('approve-account');
+    Route::post('/reject-account/{id}', [AdminController::class, 'rejectAccount'])->name('reject-account');
+    Route::get('/water-rates', [AdminController::class, 'waterRates'])->name('water-rates');
+    Route::post('/set-water-rate', [AdminController::class, 'setWaterRate'])->name('set-water-rate');
+    Route::post('/assign-plumber', [AdminController::class, 'assignPlumber'])->name('assign-plumber');
+    Route::post('/assign-disconnection', [AdminController::class, 'assignDisconnection'])->name('assign-disconnection');
+    Route::get('/user-records/{role}', [AdminController::class, 'userRecords'])->name('user-records');
+    Route::post('/generate-monthly-bills', [AdminController::class, 'generateMonthlyBills'])->name('generate-monthly-bills');
+    Route::get('/create-user', [AdminController::class, 'createUser'])->name('create-user');
+    Route::post('/create-user', [AdminController::class, 'storeUser'])->name('store-user');
+});
+
+// Accountant routes
+Route::middleware(['auth', 'accountant'])->prefix('accountant')->name('accountant.')->group(function () {
+    Route::get('/dashboard', [AccountantController::class, 'dashboard'])->name('dashboard');
+    Route::get('/search-customers', [AccountantController::class, 'searchCustomers'])->name('search-customers');
+    Route::post('/process-payment', [AccountantController::class, 'processPayment'])->name('process-payment');
+    Route::get('/customer-bills/{customerId}', [AccountantController::class, 'getCustomerBills'])->name('customer-bills');
+    Route::get('/payment-history', [AccountantController::class, 'paymentHistory'])->name('payment-history');
+    Route::get('/receipt/{paymentId}', [AccountantController::class, 'printReceipt'])->name('receipt');
+});
+
+// Plumber routes
+Route::middleware(['auth', 'plumber'])->prefix('plumber')->name('plumber.')->group(function () {
+    Route::get('/dashboard', [PlumberController::class, 'dashboard'])->name('dashboard');
+    Route::post('/start-job/{connectionId}', [PlumberController::class, 'startJob'])->name('start-job');
+    Route::post('/complete-job/{connectionId}', [PlumberController::class, 'completeJob'])->name('complete-job');
+    Route::get('/customer-history', [PlumberController::class, 'customerHistory'])->name('customer-history');
+    Route::post('/update-availability', [PlumberController::class, 'updateAvailability'])->name('update-availability');
+    Route::post('/record-reading/{customerId}', [PlumberController::class, 'recordReading'])->name('record-reading');
+    Route::get('/mid-reading/{customerId}', [PlumberController::class, 'midReadingForMonth'])->name('mid-reading');
+});
+
+// Customer routes
+Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->group(function () {
+    Route::get('/dashboard', [CustomerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/bills', [CustomerController::class, 'bills'])->name('bills');
+    Route::get('/payment-history', [CustomerController::class, 'paymentHistory'])->name('payment-history');
+    Route::post('/request-setup', function() {
+        $user = auth()->user();
+        // Create a pending setup request
+        SetupRequest::firstOrCreate(
+            ['customer_id' => $user->id, 'status' => 'pending'],
+            ['notes' => 'Customer requested water setup']
+        );
+        return back()->with('success', 'Setup request sent to admin.');
+    })->name('request-setup');
+    Route::get('/plumber-info', [CustomerController::class, 'plumberInfo'])->name('plumber-info');
+    Route::get('/profile', [CustomerController::class, 'profile'])->name('profile');
+    Route::post('/update-profile', [CustomerController::class, 'updateProfile'])->name('update-profile');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
