@@ -43,6 +43,7 @@ class AdminRegisteredUserController extends Controller
             'address' => 'N/A',
             'status' => 'active',
             'is_available' => true,
+            'customer_number' => User::generateCustomerNumber(),
         ]);
 
         Auth::login($user);

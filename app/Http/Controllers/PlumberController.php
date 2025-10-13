@@ -9,6 +9,7 @@ use App\Models\WaterRate;
 use App\Services\BillingService;
 use App\Models\MeterReading;
 use App\Models\SetupRequest;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -110,21 +111,24 @@ class PlumberController extends Controller
     {
         $request->validate([
             'reading_date' => 'required|date',
-            'previous_reading' => 'required|numeric|min:0',
-            'present_reading' => 'required|numeric|min:0|gte:previous_reading',
-            'period' => 'required|in:mid,end',
+            'present_reading' => 'required|numeric|min:0',
         ]);
 
-        $used = (float) $request->present_reading - (float) $request->previous_reading;
+        $present = (float) $request->present_reading;
+        // Use the latest present reading as baseline; fallback to 0
+        $previous = (float) (MeterReading::where('customer_id', $customerId)
+            ->orderBy('reading_date', 'desc')
+            ->value('present_reading') ?? 0);
+
+        $used = max($present - $previous, 0);
 
         $reading = MeterReading::create([
             'customer_id' => $customerId,
             'plumber_id' => Auth::id(),
             'reading_date' => $request->reading_date,
-            'previous_reading' => $request->previous_reading,
-            'present_reading' => $request->present_reading,
+            'previous_reading' => $previous,
+            'present_reading' => $present,
             'used_cubic_meters' => $used,
-            'period' => $request->period,
         ]);
 
         // Update bill based on cumulative readings this month
@@ -146,20 +150,41 @@ class PlumberController extends Controller
         return redirect()->back()->with('success', 'Reading recorded and bill notifications sent.');
     }
 
-    public function midReadingForMonth($customerId)
+    public function lastReading($customerId)
     {
-        $monthStart = now()->startOfMonth()->toDateString();
-        $monthEnd = now()->endOfMonth()->toDateString();
-        $mid = MeterReading::where('customer_id', $customerId)
-            ->where('period', 'mid')
-            ->whereBetween('reading_date', [$monthStart, $monthEnd])
+        $last = MeterReading::where('customer_id', $customerId)
             ->orderBy('reading_date', 'desc')
             ->first();
         return response()->json([
-            'previous_reading' => optional($mid)->previous_reading,
-            'present_reading' => optional($mid)->present_reading,
-            'used_cubic_meters' => optional($mid)->used_cubic_meters,
+            'previous_reading' => optional($last)->present_reading ?? 0,
+            'reading_date' => optional($last)->reading_date,
         ]);
+    }
+
+    public function printBillReceipt($customerId)
+    {
+        // Use the most recent payment if exists; otherwise show a preview using current bill
+        $payment = Payment::where('customer_id', $customerId)
+            ->with(['waterBill.customer', 'accountant'])
+            ->latest('created_at')
+            ->first();
+
+        if (!$payment) {
+            $bill = WaterBill::where('customer_id', $customerId)
+                ->latest('billing_month')
+                ->first();
+            if (!$bill) {
+                abort(404);
+            }
+            // Create a transient payment-like object for preview
+            $payment = new Payment([
+                'customer_id' => $customerId,
+                'amount_paid' => $bill->total_amount,
+            ]);
+            $payment->setRelation('waterBill', $bill->load('customer'));
+        }
+
+        return view('receipt', compact('payment'));
     }
 
     public function updateAvailability(Request $request)

@@ -68,6 +68,15 @@
                             <a href="{{ route('admin.pending-accounts') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Pending Accounts</a>
                             <a href="{{ route('admin.water-rates') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Water Rates</a>
                             <a href="{{ route('admin.create-user') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Create User</a>
+                            <div class="border-t my-2"></div>
+                            <div class="text-xs text-gray-400 uppercase mb-2">User Records</div>
+                            <a href="{{ route('admin.user-records', 'customer') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Customer Records</a>
+                            <a href="{{ route('admin.user-records', 'plumber') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Plumber Records</a>
+                            <a href="{{ route('admin.user-records', 'accountant') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Accountant Records</a>
+                            <div class="border-t my-2"></div>
+                            <div class="text-xs text-gray-400 uppercase mb-2">Operations</div>
+                            <a href="{{ route('admin.operations') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Setup Requests & Pending Connections</a>
+                            <a href="{{ route('admin.monthly-bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Monthly Bills</a>
                         @elseif(auth()->user()->isAccountant())
                             <a href="{{ route('accountant.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
                             <a href="{{ route('accountant.payment-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Payment History</a>
@@ -76,8 +85,15 @@
                             <a href="{{ route('plumber.customer-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Customer History</a>
                         @elseif(auth()->user()->isCustomer())
                             <a href="{{ route('customer.dashboard') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Dashboard</a>
-                            <a href="{{ route('customer.bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Bills</a>
-                            <a href="{{ route('customer.payment-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Payment History</a>
+                            <a href="{{ route('customer.recent-bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Bills</a>
+                            <a href="{{ route('customer.recent-payments') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Recent Payments</a>
+                            <a href="#" onclick="event.preventDefault(); document.getElementById('request-setup-form').submit();" class="block px-3 py-2 rounded hover:bg-gray-100">Request Water Setup</a>
+                            <form id="request-setup-form" method="POST" action="{{ route('customer.request-setup') }}" class="hidden">
+                                @csrf
+                            </form>
+                            <div class="border-t my-2"></div>
+                            <a href="{{ route('customer.bills') }}" class="block px-3 py-2 rounded hover:bg-gray-100">All Bills</a>
+                            <a href="{{ route('customer.payment-history') }}" class="block px-3 py-2 rounded hover:bg-gray-100">All Payments</a>
                             <a href="{{ route('customer.profile') }}" class="block px-3 py-2 rounded hover:bg-gray-100">Profile</a>
                         @endif
                     </nav>
@@ -107,6 +123,7 @@
             </main>
         </div>
     </div>
+    @stack('scripts')
 </body>
 </html>
 

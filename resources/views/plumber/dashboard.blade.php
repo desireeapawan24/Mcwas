@@ -7,6 +7,62 @@
         <p class="text-gray-600">Manage water connection jobs and customer assignments</p>
     </div>
 
+    <!-- Notifications -->
+    @if(auth()->user()->unreadNotifications->count() > 0)
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">New Notifications ({{ auth()->user()->unreadNotifications->count() }})</h3>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                @foreach(auth()->user()->unreadNotifications->take(5) as $notification)
+                    <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-blue-900">
+                                            New Customer Assignment
+                                        </p>
+                                        <p class="text-sm text-blue-700 mt-1">
+                                            {{ $notification->data['message'] }}
+                                        </p>
+                                        <div class="mt-2 text-xs text-blue-600">
+                                            <strong>Customer:</strong> {{ $notification->data['customer_name'] }} ({{ $notification->data['customer_number'] }})<br>
+                                            <strong>Address:</strong> {{ $notification->data['customer_address'] }}<br>
+                                            <strong>Phone:</strong> {{ $notification->data['customer_phone'] }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-shrink-0">
+                                <form action="{{ route('plumber.mark-notification-read', $notification->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        Mark as Read
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            @if(auth()->user()->unreadNotifications->count() > 5)
+                <div class="mt-4 text-center">
+                    <a href="{{ route('plumber.notifications') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        View All Notifications ({{ auth()->user()->unreadNotifications->count() }})
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Availability Status -->
     <div class="bg-white rounded-lg shadow mb-8">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -130,11 +186,6 @@
                                         @csrf
                                         <div class="grid grid-cols-2 gap-2 text-left">
                                             <input type="date" name="reading_date" class="border px-2 py-1 rounded" value="{{ now()->format('Y-m-d') }}">
-                                            <select name="period" class="border px-2 py-1 rounded">
-                                                <option value="mid">15th</option>
-                                                <option value="end">30th</option>
-                                            </select>
-                                            <input type="number" step="0.0001" name="previous_reading" placeholder="Previous" class="border px-2 py-1 rounded">
                                             <input type="number" step="0.0001" name="present_reading" placeholder="Present" class="border px-2 py-1 rounded">
                                         </div>
                                         <button type="submit" class="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Reading</button>
@@ -222,14 +273,9 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
-                            <select id="meterPeriod" name="period" class="w-full px-3 py-2 border border-gray-300 rounded-md" required onchange="handlePeriodChange()">
-                                <option value="mid">15th</option>
-                                <option value="end">30th</option>
+                            <select id="meterPeriod" name="period" class="w-full px-3 py-2 border border-gray-300 rounded-md" disabled>
+                                <option value="end" selected>30th</option>
                             </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Previous</label>
-                            <input id="prevReading" type="number" step="0.0001" name="previous_reading" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Present</label>
@@ -255,7 +301,7 @@
 
 <script>
 const RECORD_READING_BASE = "{{ url('/plumber/record-reading') }}";
-const MID_READING_BASE = "{{ url('/plumber/mid-reading') }}";
+const LAST_READING_BASE = "{{ url('/plumber/last-reading') }}";
 const EXCESS_RATE = 5.3333333333333;
 const BASE_ALLOWANCE = 10.0;
 const BASE_CHARGE = 160.0;
@@ -267,38 +313,30 @@ function openMeterModal(customerId, name) {
     form.reset();
     document.getElementById('meterReadingDate').value = new Date().toISOString().slice(0,10);
     modal.classList.remove('hidden');
-    // Default to mid
-    document.getElementById('meterPeriod').value = 'mid';
-    document.getElementById('prevReading').value = '';
-    document.getElementById('presentReading').value = '';
-    updateBillPreview();
+    // Fixed to end-of-month (30th)
+    document.getElementById('meterPeriod').value = 'end';
+    // Prefill baseline from last reading
+    const action = document.getElementById('meterForm').action;
+    const customerId = action.split('/').pop();
+    fetch(`${LAST_READING_BASE}/${customerId}`)
+        .then(r=>r.json())
+        .then(data => {
+            window.__baseline = parseFloat(data.previous_reading || 0);
+            document.getElementById('presentReading').value = '';
+            updateBillPreview();
+        })
+        .catch(() => {
+            window.__baseline = 0;
+            document.getElementById('presentReading').value = '';
+            updateBillPreview();
+        });
 }
 function closeMeterModal() {
     document.getElementById('meterModal').classList.add('hidden');
 }
-function handlePeriodChange() {
-    const period = document.getElementById('meterPeriod').value;
-    if (period === 'end') {
-        // Fetch mid reading to prefill previous
-        const customerName = document.getElementById('meterCustomerName').textContent;
-        const action = document.getElementById('meterForm').action;
-        const customerId = action.split('/').pop();
-        fetch(`${MID_READING_BASE}/${customerId}`)
-            .then(r=>r.json())
-            .then(data => {
-                if (data && data.present_reading) {
-                    document.getElementById('prevReading').value = data.present_reading;
-                }
-                updateBillPreview();
-            })
-            .catch(()=>updateBillPreview());
-    } else {
-        document.getElementById('prevReading').value = '';
-        updateBillPreview();
-    }
-}
+function handlePeriodChange() {}
 function updateBillPreview() {
-    const prev = parseFloat(document.getElementById('prevReading').value) || 0;
+    const prev = typeof window.__baseline === 'number' ? window.__baseline : 0;
     const pres = parseFloat(document.getElementById('presentReading').value) || 0;
     const used = Math.max(pres - prev, 0);
     document.getElementById('usageEntry').textContent = used.toFixed(4);

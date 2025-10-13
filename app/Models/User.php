@@ -17,6 +17,7 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
+        'plain_password',
         'role',
         'age',
         'phone_number',
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'address',
         'status',
         'is_available',
+        'customer_number',
     ];
 
     protected $hidden = [
@@ -97,9 +99,31 @@ class User extends Authenticatable
 
     public function getCurrentBillAttribute()
     {
+        // Match the first day-of-month stored format (e.g., 'Y-m-01')
+        $currentMonth = now()->copy()->startOfMonth()->format('Y-m-d');
         return $this->waterBills()
             ->where('status', '!=', 'paid')
-            ->where('billing_month', now()->format('Y-m'))
+            ->where('billing_month', $currentMonth)
             ->first();
+    }
+
+    /**
+     * Generate a unique customer number in format YYYY-XXXX
+     */
+    public static function generateCustomerNumber(): string
+    {
+        $currentYear = date('Y');
+        $lastCustomer = self::where('customer_number', 'like', $currentYear . '-%')
+            ->orderBy('customer_number', 'desc')
+            ->first();
+
+        if ($lastCustomer && $lastCustomer->customer_number) {
+            $lastNumber = (int) substr($lastCustomer->customer_number, 5); // Extract number after YYYY-
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        return $currentYear . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

@@ -60,6 +60,7 @@ class RegisteredUserController extends Controller
             'photo' => $photoPath,
             'status' => 'pending', // Admin needs to approve
             'is_available' => $request->role === 'plumber', // Plumbers start as available
+            'customer_number' => User::generateCustomerNumber(),
         ]);
 
         event(new Registered($user));
