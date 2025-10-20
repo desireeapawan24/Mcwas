@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 // Redirect root URL to login
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect()->route('register');
 });
 
 // Removed admin registration routes per request
