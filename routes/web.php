@@ -8,14 +8,10 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Auth\AdminRegisteredUserController;
 use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
-
-// ✅ Redirect root to welcome for guests, or dashboard if logged in
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
     return view('welcome');
 })->name('home');
+
 
 
 // Removed admin registration routes per request
