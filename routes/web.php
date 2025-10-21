@@ -10,8 +10,9 @@ use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
-})->name('home');
+})->name('welcome')->withoutMiddleware(['auth']); // ✅ explicitly remove auth middleware
 
+require __DIR__.'/auth.php';
 
 
 // Removed admin registration routes per request
