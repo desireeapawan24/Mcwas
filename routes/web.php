@@ -8,10 +8,12 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Auth\AdminRegisteredUserController;
 use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Auth\Middleware\Authenticate;
+
+
 Route::get('/', function () {
     return view('welcome');
-})->name('welcome')->withoutMiddleware(['auth']); // ✅ explicitly remove auth middleware
-
+})->name('welcome')->withoutMiddleware([Authenticate::class]);
 require __DIR__.'/auth.php';
 
 
