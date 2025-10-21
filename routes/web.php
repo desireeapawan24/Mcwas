@@ -9,11 +9,11 @@ use App\Http\Controllers\Auth\AdminRegisteredUserController;
 use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
 
-
-// Redirect root URL to login
+// Redirect root URL to welcome view
 Route::get('/', function () {
-    return redirect()->route('login');
+    return view('welcome');
 });
+
 
 // Removed admin registration routes per request
 
