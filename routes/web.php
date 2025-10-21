@@ -8,12 +8,9 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Auth\AdminRegisteredUserController;
 use App\Models\SetupRequest;
 use Illuminate\Support\Facades\Route;
-Route::get('/test-plain', function () {
-    return 'Public route works fine';
+Route::get('/check-route', function () {
+    return '✅ Loaded this web.php file';
 });
-
-require __DIR__.'/auth.php';
-
 
 // Removed admin registration routes per request
 
