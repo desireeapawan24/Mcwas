@@ -211,13 +211,19 @@ class PlumberController extends Controller
     }
 
     // ✅ Mark all notifications as read
-    public function markAllNotificationsRead()
-    {
-        $user = auth()->user();
-        $user->unreadNotifications->markAsRead();
+  public function markNotificationRead($id)
+{
+    $user = auth()->user();
+    $notification = $user->notifications()->find($id);
 
-        return response()->json(['success' => true, 'message' => 'All notifications marked as read.']);
+    if ($notification) {
+        $notification->markAsRead();
+        return redirect()->back()->with('success', 'Notification marked as read.');
     }
+
+    return redirect()->back()->with('error', 'Notification not found.');
+}
+
     // ✅ View plumber's notifications
 public function notifications()
 {
