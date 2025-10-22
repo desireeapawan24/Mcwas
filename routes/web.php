@@ -75,20 +75,26 @@ Route::middleware(['auth', 'accountant'])->prefix('accountant')->name('accountan
     Route::get('/receipt/{paymentId}', [AccountantController::class, 'printReceipt'])->name('receipt');
 });
 
-// Plumber routes
-Route::middleware(['auth', 'plumber'])->prefix('plumber')->name('plumber.')->group(function () {
-    Route::get('/dashboard', [PlumberController::class, 'dashboard'])->name('dashboard');
-    Route::post('/start-job/{connectionId}', [PlumberController::class, 'startJob'])->name('start-job');
-    Route::post('/complete-job/{connectionId}', [PlumberController::class, 'completeJob'])->name('complete-job');
-    Route::get('/customer-history', [PlumberController::class, 'customerHistory'])->name('customer-history');
-    Route::post('/update-availability', [PlumberController::class, 'updateAvailability'])->name('update-availability');
-    Route::post('/record-reading/{customerId}', [PlumberController::class, 'recordReading'])->name('record-reading');
-    Route::get('/receipt/{customerId}', [PlumberController::class, 'printBillReceipt'])->name('receipt');
-    Route::get('/last-reading/{customerId}', [PlumberController::class, 'lastReading'])->name('last-reading');
-    Route::post('/mark-notification-read/{notificationId}', [PlumberController::class, 'markNotificationRead'])->name('mark-notification-read');
-    Route::get('/notifications', [PlumberController::class, 'notifications'])->name('notifications');
-    Route::post('/mark-all-notifications-read', [PlumberController::class, 'markAllNotificationsRead'])->name('mark-all-notifications-read');
-});
+/// Plumber routes
+Route::middleware(['auth', 'plumber'])
+    ->prefix('plumber')
+    ->name('plumber.')
+    ->group(function () {
+        Route::get('/dashboard', [PlumberController::class, 'dashboard'])->name('dashboard');
+        Route::post('/start-job/{connectionId}', [PlumberController::class, 'startJob'])->name('start-job');
+        Route::post('/complete-job/{connectionId}', [PlumberController::class, 'completeJob'])->name('complete-job');
+        Route::get('/customer-history', [PlumberController::class, 'customerHistory'])->name('customer-history');
+        Route::post('/update-availability', [PlumberController::class, 'updateAvailability'])->name('update-availability');
+        Route::post('/record-reading/{customerId}', [PlumberController::class, 'recordReading'])->name('record-reading');
+        Route::get('/receipt/{customerId}', [PlumberController::class, 'printBillReceipt'])->name('receipt');
+        Route::get('/last-reading/{customerId}', [PlumberController::class, 'lastReading'])->name('last-reading');
+
+        // 🔔 Notification routes
+        Route::get('/notifications', [PlumberController::class, 'notifications'])->name('notifications');
+        Route::post('/mark-notification-read/{id}', [PlumberController::class, 'markNotificationRead'])->name('mark-notification-read');
+        Route::post('/mark-all-notifications-read', [PlumberController::class, 'markAllNotificationsRead'])->name('mark-all-notifications-read');
+    });
+
 
 // Customer routes
 Route::middleware(['auth', 'customer'])->prefix('customer')->name('customer.')->group(function () {
