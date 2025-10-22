@@ -12,7 +12,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+require __DIR__.'/auth.php';
 
+Route::get('/auth/login', [AuthenticatedSessionController::class, 'create'])->name('auth.login');
+Route::get('/auth/register', [RegisteredUserController::class, 'create'])->name('auth.register');
 
 // Removed admin registration routes per request
 
