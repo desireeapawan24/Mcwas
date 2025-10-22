@@ -76,11 +76,9 @@
 
 </head>
 
-<body class="relative min-h-screen text-white antialiased overflow-y-scroll">
+<body class="relative min-h-screen text-white antialiased overflow-y-scroll bg-gradient-to-b from-blue-900 via-blue-800 to-blue-700">
 
- 
-
-  <!-- 🧭 HEADER -->
+  <!-- HEADER -->
   <header class="fixed top-0 left-0 w-full z-20 bg-white/60 backdrop-blur-md py-4 px-6 flex justify-between items-center shadow-md">
     <div class="flex items-center space-x-3">
       <img src="{{ asset('images/logo.png') }}" alt="Macwas Logo" class="h-10 w-10 drop-shadow-md">
@@ -93,7 +91,7 @@
     </nav>
   </header>
 
-  <!-- 🏠 HERO SECTION -->
+  <!-- HERO SECTION -->
   <section class="pt-40 text-center px-6">
     <h1 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight drop-shadow-lg text-3d" data-text="Manage Your Water Services with Ease">
       Manage Your Water Services with Ease
@@ -108,7 +106,7 @@
     @endauth
   </section>
 
-  <!-- 💧 SCROLLABLE TEXT SECTIONS -->
+  <!-- SCROLLABLE TEXT SECTIONS -->
   <section class="px-6 py-20 text-center space-y-12">
     <div>
       <h3 class="text-3xl font-semibold mb-3 text-accent drop-shadow-md">Automated Billing</h3>
@@ -126,7 +124,7 @@
     </div>
   </section>
 
-  <!-- ⚓ FOOTER -->
+  <!-- FOOTER -->
   <footer class="bg-black/70 py-6 text-center text-sm text-white">
     © {{ date('Y') }} {{ config('app.name','Macwas') }} Water System — All rights reserved.
   </footer>
