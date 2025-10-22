@@ -78,10 +78,7 @@
 
 <body class="relative min-h-screen text-white antialiased overflow-y-scroll">
 
-  <!-- 🌊 FIXED VIDEO BACKGROUND -->
-  <video autoplay muted loop playsinline class="fixed inset-0 w-full h-full object-cover -z-10">
-    <source src="{{ asset('videos/2603664-uhd_3840_2160_24fps.mp4') }}" type="video/mp4">
-  </video>
+ 
 
   <!-- 🧭 HEADER -->
   <header class="fixed top-0 left-0 w-full z-20 bg-white/60 backdrop-blur-md py-4 px-6 flex justify-between items-center shadow-md">
