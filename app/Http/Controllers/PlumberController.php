@@ -196,6 +196,19 @@ class PlumberController extends Controller
         return redirect()->back()->with('success', 'Availability updated successfully!');
     }
 
+    // ✅ Mark a single notification as read
+    public function markNotificationRead($id)
+    {
+        $user = auth()->user();
+        $notification = $user->notifications()->find($id);
+
+        if ($notification) {
+            $notification->markAsRead();
+            return response()->json(['success' => true, 'message' => 'Notification marked as read.']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Notification not found.'], 404);
+    }
 
     // ✅ Mark all notifications as read
   public function markNotificationRead($id)
