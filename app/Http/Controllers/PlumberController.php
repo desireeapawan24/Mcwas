@@ -58,7 +58,7 @@ class PlumberController extends Controller
             
         $connection->markAsCompleted();
 
-        // Mark any pending setup request for this customer as approved so it no longer shows in admin pending lists
+        // Mark any pending setup request for this customer as approved
         SetupRequest::where('customer_id', $connection->customer_id)
             ->where('status', 'pending')
             ->update(['status' => 'approved']);
@@ -87,7 +87,7 @@ class PlumberController extends Controller
             }
         }
 
-        // Recalculate bill immediately so dashboards reflect consumption from completion date
+        // Recalculate bill immediately
         $billingService->recalculateCurrentBillForCustomer($connection->customer_id);
         
         // Mark plumber as available again
@@ -115,7 +115,6 @@ class PlumberController extends Controller
         ]);
 
         $present = (float) $request->present_reading;
-        // Use the latest present reading as baseline; fallback to 0
         $previous = (float) (MeterReading::where('customer_id', $customerId)
             ->orderBy('reading_date', 'desc')
             ->value('present_reading') ?? 0);
@@ -131,7 +130,7 @@ class PlumberController extends Controller
             'used_cubic_meters' => $used,
         ]);
 
-        // Update bill based on cumulative readings this month
+        // Update bill
         app(BillingService::class)->recalculateCurrentBillForCustomer($customerId);
 
         // Notify customer and accountants
@@ -163,7 +162,6 @@ class PlumberController extends Controller
 
     public function printBillReceipt($customerId)
     {
-        // Use the most recent payment if exists; otherwise show a preview using current bill
         $payment = Payment::where('customer_id', $customerId)
             ->with(['waterBill.customer', 'accountant'])
             ->latest('created_at')
@@ -176,7 +174,7 @@ class PlumberController extends Controller
             if (!$bill) {
                 abort(404);
             }
-            // Create a transient payment-like object for preview
+
             $payment = new Payment([
                 'customer_id' => $customerId,
                 'amount_paid' => $bill->total_amount,
@@ -197,5 +195,27 @@ class PlumberController extends Controller
         
         return redirect()->back()->with('success', 'Availability updated successfully!');
     }
+
+
+    // ✅ Mark all notifications as read
+  public function markNotificationRead($id)
+{
+    $user = auth()->user();
+    $notification = $user->notifications()->find($id);
+
+    if ($notification) {
+        $notification->markAsRead();
+        return redirect()->back()->with('success', 'Notification marked as read.');
+    }
+
+    return redirect()->back()->with('error', 'Notification not found.');
 }
 
+    // ✅ View plumber's notifications
+public function notifications()
+{
+    $notifications = auth()->user()->notifications()->latest()->get();
+    return view('plumber.notifications', compact('notifications'));
+}
+
+}
