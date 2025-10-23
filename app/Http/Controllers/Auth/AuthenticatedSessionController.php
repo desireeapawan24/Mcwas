@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema; // ✅ Added for table existence check
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -15,26 +15,9 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View|RedirectResponse
+    public function create(): View
     {
-        $adminExists = false;
-
-        try {
-            // ✅ Only run query if the 'users' table exists
-            if (Schema::hasTable('users')) {
-                $adminExists = User::where('role', 'admin')->exists();
-
-                // ✅ Optional: Redirect to admin registration if no admin yet
-                if (!$adminExists) {
-                    return redirect()->route('admin.register');
-                }
-            }
-        } catch (\Exception $e) {
-            // ✅ Log the error so it doesn't crash the page
-            \Log::error('Error checking admin existence: ' . $e->getMessage());
-        }
-
-        // ✅ Load login view safely even if DB not ready
+        $adminExists = User::where('role', 'admin')->exists();
         return view('auth.login', compact('adminExists'));
     }
 
@@ -54,7 +37,7 @@ class AuthenticatedSessionController extends Controller
 
             $user = auth()->user();
 
-            // ✅ Check if user account is active
+            // Check if user account is active
             if ($user->status !== 'active') {
                 Auth::logout();
                 return back()->withErrors([
@@ -62,7 +45,7 @@ class AuthenticatedSessionController extends Controller
                 ]);
             }
 
-            // ✅ Check if the selected role matches the user’s role
+            // Check if the user's role matches the selected login role
             if ($user->role !== $request->role) {
                 Auth::logout();
                 return back()->withErrors([
@@ -70,7 +53,7 @@ class AuthenticatedSessionController extends Controller
                 ]);
             }
 
-            // ✅ Redirect user by role
+            // Redirect based on user role
             switch ($user->role) {
                 case 'admin':
                     return redirect()->intended(route('admin.dashboard'));
@@ -98,6 +81,7 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
+
         $request->session()->regenerateToken();
 
         return redirect('/');
