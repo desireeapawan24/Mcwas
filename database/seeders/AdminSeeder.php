@@ -12,20 +12,12 @@ class AdminSeeder extends Seeder
     {
         User::create([
             'first_name' => 'Admin',
-            'last_name' => 'User',
-            'email' => 'Hunt',
-            'password' => Hash::make('Entity'),
-            'role' => 'admin',
-            'age' => 30,
-            'phone_number' => '1234567890',
-            'national_id' => 'ADMIN001',
-            'address' => 'Admin Address',
-            'status' => 'active',
-            'is_available' => true,
+            'last_name'  => 'User',
+            'email'      => 'admin@macwas.com',
+            'password'   => Hash::make('Entity123!'),
+            'role'       => 'admin',
+            'status'     => 'active',
         ]);
     }
 }
-
-
-
-
+    
